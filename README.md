@@ -1,6 +1,6 @@
 # 的自我介绍
 
-<img src=images\OIP-C.jpg width="200" alt="远坂凛">
+<img src=images\OIP-C.png width="200" alt="远坂凛">
 
 大家好，我是**远坂凛**，我的身份是*master*。以下是我的自我介绍：
 
@@ -42,7 +42,7 @@ print(np.array([1, 2, 3]) ** 2)
 其中执行`print(np.array([1, 2, 3]) ** 2)`可输出结果。
 
 ### 我最喜欢的环境管理工具是conda
-<img src=images\1.jpg width="800" alt="截图一">
+<img src=images\1.png width="800" alt="截图一">
 
 ### 我可以在IDE上使用我建立的虚拟环境
-<img src=images\2.jpg width="800" alt="截图二">
+<img src=images\2.png width="800" alt="截图二">
