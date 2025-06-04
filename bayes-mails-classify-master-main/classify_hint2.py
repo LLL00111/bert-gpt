@@ -5,6 +5,12 @@ from itertools import chain
 from collections import Counter
 import numpy as np
 from sklearn.naive_bayes import MultinomialNB
+from imblearn.over_sampling import SMOTE
+from sklearn.metrics import classification_report  # 新增：导入分类评估报告函数
+import warnings
+
+# 忽略 FutureWarning 警告
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 def get_words(filename):
     """读取文本并过滤无效字符和长度为1的词"""
@@ -34,49 +40,50 @@ def get_top_words(top_num):
     freq = Counter(chain(*all_words))
     return [i[0] for i in freq.most_common(top_num)]
 
-top_words = get_top_words(100)
-# 构建词-个数映射表
+# 设置高频词数量
+top_num = 100
+
+# 获取高频词
+top_words = get_top_words(top_num)
+
+# 构建特征矩阵
 vector = []
 for words in all_words:
-    '''
-    words:
-    ['国际', 'SCI', '期刊', '材料', '结构力学', '工程', '杂志', '国际', 'SCI', '期刊', '先进', '材料科学',
-    '材料', '工程', '杂志', '国际', 'SCI', '期刊', '图像处理', '模式识别', '人工智能', '工程', '杂志', '国际',
-    'SCI', '期刊', '数据', '信息', '科学杂志', '国际', 'SCI', '期刊', '机器', '学习', '神经网络', '人工智能',
-    '杂志', '国际', 'SCI', '期刊', '能源', '环境', '生态', '温度', '管理', '结合', '信息学', '杂志', '期刊',
-    '网址', '论文', '篇幅', '控制', '以上', '英文', '字数', '以上', '文章', '撰写', '语言', '英语', '论文',
-    '研究', '内容', '详实', '方法', '正确', '理论性', '实践性', '科学性', '前沿性', '投稿', '初稿', '需要',
-    '排版', '录用', '提供', '模版', '排版', '写作', '要求', '正规', '期刊', '正规', '操作', '大牛', '出版社',
-    '期刊', '期刊', '质量', '放心', '检索', '稳定', '邀请函', '推荐', '身边', '老师', '朋友', '打扰', '请谅解']
-    '''
     word_map = list(map(lambda word: words.count(word), top_words))
-    '''
-    word_map:
-    [0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,
-    10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0,
-    0, 1, 0, 0, 0, 0, 0, 0, 0, 0]
-    '''
     vector.append(word_map)
 vector = np.array(vector)
 
 # 0-126.txt为垃圾邮件标记为1；127-151.txt为普通邮件标记为0
 labels = np.array([1] * 127 + [0] * 24)
 
+# 样本平衡处理
+smote = SMOTE(random_state=42)  # 初始化 SMOTE
+vector_balanced, labels_balanced = smote.fit_resample(vector, labels)  # 对特征和标签进行过采样
+print("样本平衡后的类别分布：", Counter(labels_balanced))  # 打印平衡后的类别分布
+
+# 训练模型
 model = MultinomialNB()
-model.fit(vector, labels)
+model.fit(vector_balanced, labels_balanced)  # 使用平衡后的数据训练模型
 
 def predict(filename):
     """对未知邮件分类"""
     # 构建未知邮件的词向量
     words = get_words(filename)
-    current_vector = np.array(
-        tuple(map(lambda word: words.count(word), top_words)))
+    current_vector = np.array(tuple(map(lambda word: words.count(word), top_words)))
     # 预测结果
     result = model.predict(current_vector.reshape(1, -1))
     return '垃圾邮件' if result == 1 else '普通邮件'
+
+# 预测并输出结果
 print('151.txt分类情况:{}'.format(predict('邮件_files/151.txt')))
 print('152.txt分类情况:{}'.format(predict('邮件_files/152.txt')))
 print('153.txt分类情况:{}'.format(predict('邮件_files/153.txt')))
 print('154.txt分类情况:{}'.format(predict('邮件_files/154.txt')))
 print('155.txt分类情况:{}'.format(predict('邮件_files/155.txt')))
+
+# 新增：模型评估
+# 在训练集上预测
+y_pred = model.predict(vector_balanced)
+# 输出分类评估报告
+print("\n模型评估报告：")
+print(classification_report(labels_balanced, y_pred, target_names=["普通邮件", "垃圾邮件"]))

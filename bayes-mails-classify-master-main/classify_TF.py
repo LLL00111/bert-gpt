@@ -5,6 +5,7 @@ from itertools import chain
 from collections import Counter
 import numpy as np
 from sklearn.naive_bayes import MultinomialNB
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 def get_words(filename):
     """读取文本并过滤无效字符和长度为1的词"""
@@ -60,23 +61,66 @@ for words in all_words:
     vector.append(word_map)
 vector = np.array(vector)
 
+def get_tfidf_features(top_num):
+    """使用TF-IDF加权特征"""
+    filename_list = ['邮件_files/{}.txt'.format(i) for i in range(151)]
+    texts = [' '.join(get_words(filename)) for filename in filename_list]
+    tfidf = TfidfVectorizer(max_features=top_num)
+    tfidf_matrix = tfidf.fit_transform(texts)
+    return tfidf, tfidf_matrix.toarray()
+
+
+def build_feature_matrix(feature_type, top_num):
+    """根据特征类型构建特征矩阵"""
+    if feature_type == 'freq':
+        top_words = get_top_words(top_num)
+        vector = []
+        for words in all_words:
+            word_map = list(map(lambda word: words.count(word), top_words))
+            vector.append(word_map)
+        return np.array(vector), top_words
+    elif feature_type == 'tfidf':
+        tfidf, tfidf_matrix = get_tfidf_features(top_num)
+        return tfidf_matrix, tfidf
+    else:
+        raise ValueError("Invalid feature type. Choose 'freq' or 'tfidf'.")
+
+
+# 特征选择类型 ('freq' 或 'tfidf')
+#feature_type = 'freq'  # 使用高频词特征
+feature_type = 'tfidf'  # 使用TF-IDF加权特征
+top_num = 100
+
+# 构建特征矩阵
+vector, feature_extractor = build_feature_matrix(feature_type, top_num)
+
 # 0-126.txt为垃圾邮件标记为1；127-151.txt为普通邮件标记为0
 labels = np.array([1] * 127 + [0] * 24)
 
+# 训练模型
 model = MultinomialNB()
 model.fit(vector, labels)
 
-def predict(filename):
+def predict(filename, feature_type, feature_extractor):
     """对未知邮件分类"""
     # 构建未知邮件的词向量
     words = get_words(filename)
-    current_vector = np.array(
-        tuple(map(lambda word: words.count(word), top_words)))
+    if feature_type == 'freq':
+        current_vector = np.array(tuple(map(lambda word: words.count(word), feature_extractor)))
+    elif feature_type == 'tfidf':
+        text = ' '.join(words)
+        current_vector = feature_extractor.transform([text]).toarray()[0]
+    else:
+        raise ValueError("Invalid feature type. Choose 'freq' or 'tfidf'.")
+
     # 预测结果
     result = model.predict(current_vector.reshape(1, -1))
     return '垃圾邮件' if result == 1 else '普通邮件'
-print('151.txt分类情况:{}'.format(predict('邮件_files/151.txt')))
-print('152.txt分类情况:{}'.format(predict('邮件_files/152.txt')))
-print('153.txt分类情况:{}'.format(predict('邮件_files/153.txt')))
-print('154.txt分类情况:{}'.format(predict('邮件_files/154.txt')))
-print('155.txt分类情况:{}'.format(predict('邮件_files/155.txt')))
+
+
+# 预测并输出结果
+print('151.txt分类情况:{}'.format(predict('邮件_files/151.txt', feature_type, feature_extractor)))
+print('152.txt分类情况:{}'.format(predict('邮件_files/152.txt', feature_type, feature_extractor)))
+print('153.txt分类情况:{}'.format(predict('邮件_files/153.txt', feature_type, feature_extractor)))
+print('154.txt分类情况:{}'.format(predict('邮件_files/154.txt', feature_type, feature_extractor)))
+print('155.txt分类情况:{}'.format(predict('邮件_files/155.txt', feature_type, feature_extractor)))
