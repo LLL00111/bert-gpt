@@ -65,19 +65,19 @@ feature_type = 'freq'  # 使用高频词特征
 ### 代码运行截图
 `classify.py`
 
-<img src="C:\Users\57589\PycharmProjects\NLP\bayes-mails-classify-master-main\images\微信图片_20250604192039.png">
+![图片1](images/1.png)
 
 `classsify_TF.py`
 
-<img src="C:\Users\57589\PycharmProjects\NLP\bayes-mails-classify-master-main\images\微信图片_20250604192122.png">
+![图片2](images/4.png)
 
 ## optional
 ### 样本平衡处理
 `classify_Hint.py`
 
-<img src="C:\Users\57589\PycharmProjects\NLP\bayes-mails-classify-master-main\images\微信图片_20250604192109.png">
+![图片3](images/2.png)
 
 ### 增加模型评估指标
 `classify_Hint_2.py`
 
-<img src="C:\Users\57589\PycharmProjects\NLP\bayes-mails-classify-master-main\images\微信图片_20250604192117.png">
+![图片4](images/3.png)
